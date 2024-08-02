@@ -79,30 +79,27 @@ $output = '';
 if (!empty($listaroll)) {
     $output .= '<ul>';
     foreach ($listaroll as $roll) {
-        $disponible = true; // Reiniciar disponibilidad para cada roll
+        // Reiniciar disponibilidad para cada roll
+        $disponible = true;
         $ingredientes_faltantes = [];
-        $ids_insumos_faltantes = []; // Lista de IDs de insumos faltantes
+
         foreach ($lista_stock_roll as $stock) {
             if ($stock['id_roll'] == $roll['id_roll']) {
                 if ($stock['cobertura_porcion'] <= 0) {
                     $disponible = false;
                     $ingredientes_faltantes[] = $tipos_insumo[1] . ' - ' . $stock['cobertura'];
-                    $ids_insumos_faltantes[] = $stock['cobertura']; // Asume que hay un campo 'cobertura_id'
                 }
                 if ($stock['proteina_porcion'] <= 0) {
                     $disponible = false;
                     $ingredientes_faltantes[] = $tipos_insumo[2] . ' - ' . $stock['proteina'];
-                    $ids_insumos_faltantes[] = $stock['proteina']; // Asume que hay un campo 'proteina_id'
                 }
                 if ($stock['vegetal_1_porcion'] <= 0) {
                     $disponible = false;
                     $ingredientes_faltantes[] = $tipos_insumo[3] . ' - ' . $stock['vegetal_1'];
-                    $ids_insumos_faltantes[] = $stock['vegetal_1']; // Asume que hay un campo 'vegetal_1_id'
                 }
                 if ($stock['vegetal_2_porcion'] <= 0) {
                     $disponible = false;
                     $ingredientes_faltantes[] = $tipos_insumo[3] . ' - ' . $stock['vegetal_2'];
-                    $ids_insumos_faltantes[] = $stock['vegetal_2']; // Asume que hay un campo 'vegetal_2_id'
                 }
             }
         }
@@ -115,7 +112,7 @@ if (!empty($listaroll)) {
         $output .= '<strong>Vegetales </strong>' . $roll['vegetal_1'] . ' y ' . $roll['vegetal_2'] . '.<br>';
         $output .= '</div>';
         if (!$disponible) {
-            $output .= '<button class="btn btn-danger btn-sm editarRollBtn" data-id="' . $roll['id_roll'] . '" data-insumos="' . implode(',', $ids_insumos_faltantes) . '" title="Modificar insumo faltante">!</button>';
+            $output .= '<button class="btn btn-danger btn-sm editarRollBtn" data-id="' . $roll['id_roll'] . '" data-insumos="' . implode(',', $ingredientes_faltantes) . '" title="Modificar insumo faltante">!</button>';
         }
         $output .= '</div>';
         if (!empty($ingredientes_faltantes)) {
@@ -127,7 +124,6 @@ if (!empty($listaroll)) {
     }
     $output .= '</ul>';
 }
-
 
 // Generar HTML para snacks
 if (!empty($listasnack)) {
@@ -173,51 +169,36 @@ if ((!empty($snack_faltantes)) || (!empty($ingredientes_faltantes))) {
 echo $output;
 ?>
 
-<div class="modal fade" id="modalReemplazarInsumo" tabindex="-1" role="dialog" aria-labelledby="modalReemplazarInsumoLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="modalReemplazarInsumoLabel">Insumos Faltantes</h5>
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="reemplazoContainer">
-                <!-- Aquí se cargarán las listas de selección de insumos faltantes -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
-                <button type="button" class="btn btn-primary" id="guardarReemplazos">Guardar cambios</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <script>
 $(document).ready(function () {
     $('.editarRollBtn').on('click', function () {
         var idRoll = $(this).data('id');
         var insumosFaltantes = $(this).data('insumos');
         
-        console.log(typeof insumosFaltantes); // Debería ser 'string'
-        console.log(insumosFaltantes); // Debería mostrar la cadena con insumos
-
+        // Transformar insumosFaltantes en un array de objetos con 'tipo' y 'nombre'
+        var insumosArray = [];
         if (typeof insumosFaltantes === 'string') {
-            insumosFaltantes = insumosFaltantes.split(',');
-        } else {
-            insumosFaltantes = [];
+            insumosFaltantes.split(',').forEach(function(insumo) {
+                var partes = insumo.split(' - ');
+                insumosArray.push({ tipo: partes[0], nombre: partes[1] });
+            });
         }
 
         $.ajax({
             url: 'manejar_reemplazo_insumos.php',
             method: 'POST',
-            data: { action: 'get_reemplazo', id_roll: idRoll, insumos_faltantes: insumosFaltantes },
+            data: { action: 'get_reemplazo', id_roll: idRoll, insumos_faltantes: insumosArray },
             success: function (response) {
                 $('#reemplazoContainer').html(response);
+                $('#modalForm .modal-content').addClass('modal-darken'); // Oscurecer el primer modal
                 $('#modalReemplazarInsumo').modal('show');
             }
         });
     });
+
+    $('#modalReemplazarInsumo').on('hidden.bs.modal', function () {
+        $('#modalForm .modal-content').removeClass('modal-darken'); // Quitar oscurecimiento cuando se cierre el segundo modal
+    });
 });
 
 </script>
-

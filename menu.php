@@ -153,6 +153,27 @@ if ($accion == "Agregar") {
         justify-content: space-between;
         align-items: center;
     }
+
+    .modal-darken {
+        background-color: rgba(0, 0, 0, 0.5);
+        pointer-events: none;
+        color: transparent;
+        /* Hacer el texto invisible */
+    }
+
+    .modal-darken * {
+        pointer-events: none;
+        /* Desactivar interactividad de todos los elementos hijos */
+    }
+
+    .modal-darken textarea,
+    .modal-darken button {
+        background-color: rgba(0, 0, 0, 0.5) !important;
+        color: transparent !important;
+        /* Hacer el texto invisible */
+        border: none;
+        /* Remover el borde si es necesario */
+    }
 </style>
 
 <div class="col-md-9">
@@ -248,7 +269,7 @@ if ($accion == "Agregar") {
                     </td>
                 <?php } else { ?>
                     <td style="text-align: center;">
-                       <i> Agregue una promoción para comenzar una orden. </i> 
+                        <i> Agregue una promoción para comenzar una orden. </i>
                     </td>
                 <?php } ?>
             </tr>
@@ -277,8 +298,8 @@ if ($accion == "Agregar") {
 </div>
 
 <!-- Modal principal para detalles de la promoción -->
-<div class="modal" id="modalForm" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
+<div class="modal fade" id="modalForm" tabindex="-1" role="dialog" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <!-- Modal Header 
             <div class="modal-header">
@@ -287,6 +308,7 @@ if ($accion == "Agregar") {
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>-->
+
             <div class="modal-body">
                 <div class="d-flex justify-content-between align-items-center">
                     <p id="modalNombrePromocion" class="text-center" style="flex: 1;"></p>
@@ -305,6 +327,24 @@ if ($accion == "Agregar") {
             <div class="modal-footer">
                 <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
                 <button type="button" class="btn btn-success" id="addOrderBtn" <?php echo $stock_disponible ? '' : 'disabled'; ?>>Añadir</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<div class="modal fade" id="modalReemplazarInsumo" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title text-center" style="flex: 1;" id="modalReemplazarInsumoLabel">Insumos Faltantes</h5>
+                </button>
+            </div>
+            <div class="modal-body" id="reemplazoContainer">
+                <!-- Aquí se cargarán las listas de selección de insumos faltantes -->
+            </div>
+            <div class="modal-footer" style="justify-content: center;">
+                <button type="button" class="btn btn-lg btn-primary w-100" id="guardarReemplazos">Guardar cambios</button>
             </div>
         </div>
     </div>
@@ -334,8 +374,6 @@ if ($accion == "Agregar") {
         });
     });
 </script>
-
-
 
 
 <?php include ("template/piepagina.php"); ?>
