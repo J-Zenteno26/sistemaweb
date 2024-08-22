@@ -62,7 +62,7 @@ stock.porcion,
 stock.fecha_modificacion
 FROM snack
 INNER JOIN stock on snack.id_snack = stock.id_insumo
-where snack.id_promocion=:id_promocion");
+WHERE snack.id_promocion=:id_promocion");
 $stock_snack->bindParam(':id_promocion', $id_promocion, PDO::PARAM_INT);
 $stock_snack->execute();
 $lista_stock_snack = $stock_snack->fetchAll(PDO::FETCH_ASSOC);
@@ -79,8 +79,7 @@ $output = '';
 if (!empty($listaroll)) {
     $output .= '<ul>';
     foreach ($listaroll as $roll) {
-        // Reiniciar disponibilidad para cada roll
-        $disponible = true;
+        $disponible = true; // Reiniciar disponibilidad para cada roll
         $ingredientes_faltantes = [];
 
         foreach ($lista_stock_roll as $stock) {
@@ -106,10 +105,10 @@ if (!empty($listaroll)) {
         $output .= '<li style="margin-bottom: 20px;">';
         $output .= '<div style="display: flex; justify-content: space-between; align-items: center;">';
         $output .= '<div>';
-        $output .= '<strong>Roll ' . strtolower($roll['nombre_roll']) . '</strong> :<br>';
-        $output .= '<strong>Cobertura </strong>' . $roll['cobertura'] . '<br>';
-        $output .= '<strong>Proteina </strong>' . $roll['proteina'] . '<br>';
-        $output .= '<strong>Vegetales </strong>' . $roll['vegetal_1'] . ' y ' . $roll['vegetal_2'] . '.<br>';
+        $output .= '<strong>Roll ' . strtolower($roll['nombre_roll']) . '</strong> <br>';
+        $output .= '<strong>Cobertura - </strong>' . $roll['cobertura'] . '<br>';
+        $output .= '<strong>Proteina - </strong>' . $roll['proteina'] . '<br>';
+        $output .= '<strong>Vegetales - </strong>' . $roll['vegetal_1'] . ' y ' . $roll['vegetal_2'] . '.<br>';
         $output .= '</div>';
         if (!$disponible) {
             $output .= '<button class="btn btn-danger btn-sm editarRollBtn" data-id="' . $roll['id_roll'] . '" data-insumos="' . implode(',', $ingredientes_faltantes) . '" title="Modificar insumo faltante">!</button>';
@@ -125,17 +124,18 @@ if (!empty($listaroll)) {
     $output .= '</ul>';
 }
 
+$output = '';
 // Generar HTML para snacks
 if (!empty($listasnack)) {
     $output .= '<ul>';
     foreach ($listasnack as $snack) {
-        $disponible = true; // Reiniciar disponibilidad para cada snack     
+        $disponible_snack = true; // Reiniciar disponibilidad para cada snack     
         $snack_faltantes = [];
 
         foreach ($lista_stock_snack as $stock) {
             if ($stock['id_snack'] == $snack['id_snack']) {
                 if ($stock['porcion'] <= 0) {
-                    $disponible = false;
+                    $disponible_snack = false;
                     $snack_faltantes[] = $stock['nombre_snack'];
                 }
             }
@@ -145,8 +145,8 @@ if (!empty($listasnack)) {
         $output .= '<div>';
         $output .= '<strong>Snack:</strong> ' . strtolower($snack['nombre_snack']) . ' - ' . $snack['cantidad'] . ' unid.<br>';
         $output .= '</div>';
-        if (!$disponible) {
-            $output .= '<button class="btn btn-danger btn-sm editarSnackBtn" data-id="' . $snack['id_snack'] . '" title="Modificar insumo faltante">!</button>';
+        if (!$disponible_snack) {
+            $output .= '<button class="btn btn-danger btn-sm editarSnackBtn" data-id="' . $snack['id_snack'] . '" data-snack="' . implode(',', $snack_faltantes) . '" title="Modificar insumo faltante">!</button>';
         }
         $output .= '</div>';
         if (!empty($snack_faltantes)) {
@@ -158,47 +158,63 @@ if (!empty($listasnack)) {
     }
     $output .= '</ul>';
 }
-if ((!empty($snack_faltantes)) || (!empty($ingredientes_faltantes))) {
-    $output .= '<div class="alert alert-dismissible alert-danger">';
-    $output .= '<strong>!Atención! </strong>No están todos los insumos disponibles. </div>';
-    $stock_disponible = true;
-} else {
-    $stock_disponible = false;
-}
-
 echo $output;
 ?>
 
 <script>
-$(document).ready(function () {
-    $('.editarRollBtn').on('click', function () {
-        var idRoll = $(this).data('id');
-        var insumosFaltantes = $(this).data('insumos');
-        
-        // Transformar insumosFaltantes en un array de objetos con 'tipo' y 'nombre'
-        var insumosArray = [];
-        if (typeof insumosFaltantes === 'string') {
-            insumosFaltantes.split(',').forEach(function(insumo) {
-                var partes = insumo.split(' - ');
-                insumosArray.push({ tipo: partes[0], nombre: partes[1] });
-            });
-        }
+    $(document).ready(function () {
+        $('.editarRollBtn').on('click', function () {
+            var idRoll = $(this).data('id');
+            var insumosFaltantes = $(this).data('insumos');
 
-        $.ajax({
-            url: 'manejar_reemplazo_insumos.php',
-            method: 'POST',
-            data: { action: 'get_reemplazo', id_roll: idRoll, insumos_faltantes: insumosArray },
-            success: function (response) {
-                $('#reemplazoContainer').html(response);
-                $('#modalForm .modal-content').addClass('modal-darken'); // Oscurecer el primer modal
-                $('#modalReemplazarInsumo').modal('show');
+            // Transformar insumosFaltantes en un array de objetos con 'tipo' y 'nombre'
+            var insumosArray = [];
+            if (typeof insumosFaltantes === 'string') {
+                insumosFaltantes.split(',').forEach(function (insumo) {
+                    var partes = insumo.split(' - ');
+                    insumosArray.push({ tipo: partes[0], nombre: partes[1] });
+                });
             }
+
+            $.ajax({
+                url: 'manejar_reemplazo_insumos.php',
+                method: 'POST',
+                data: { action: 'get_reemplazo', id_roll: idRoll, insumos_faltantes: insumosArray },
+                success: function (response) {
+                    $('#reemplazoContainer').html(response);
+                    $('#modalForm .modal-content').addClass('modal-darken'); // Oscurecer el primer modal
+                    $('#modalReemplazarInsumo').modal('show');
+                }
+            });
+        });
+
+        $('.editarSnackBtn').on('click', function () {
+            var idSnack = $(this).data('id');
+            var snack_faltantes = $(this).data('snack');
+
+            // Transformar insumosFaltantes en un array de objetos con 'tipo' y 'nombre'
+            //  var insumosArray = [];
+            //  if (typeof insumosFaltantes === 'string') {
+            //      insumosFaltantes.split(',').forEach(function(insumo) {
+            //          var partes = insumo.split(' - ');
+            //          insumosArray.push({ tipo: partes[0], nombre: partes[1] });
+            //      });
+            //  }
+
+            $.ajax({
+                url: 'manejar_reemplazo_snack.php',
+                method: 'POST',
+                data: { action: 'get_reemplazo', idSnack: idSnack, snack_faltantes: snack_faltantes },
+                success: function (response) {
+                    $('#reemplazoContainer').html(response);
+                    $('#modalReemplazarInsumo').modal('show');
+                }
+            });
+        });
+
+        $('#modalReemplazarInsumo').on('hidden.bs.modal', function () {
+            $('#modalForm .modal-content').removeClass('modal-darken'); // Quitar oscurecimiento cuando se cierre el segundo modal
         });
     });
-
-    $('#modalReemplazarInsumo').on('hidden.bs.modal', function () {
-        $('#modalForm .modal-content').removeClass('modal-darken'); // Quitar oscurecimiento cuando se cierre el segundo modal
-    });
-});
 
 </script>

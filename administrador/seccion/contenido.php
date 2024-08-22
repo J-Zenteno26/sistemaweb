@@ -87,7 +87,6 @@ switch ($accion) {
                 $sentenciaSQL->bindParam(':id_roll', $id_roll);
                 $sentenciaSQL->execute();
 
-
                 $query = $sentenciaSQL->queryString;
                 echo "Consulta SQL: $query\n"; // Imprimir consulta SQL en consola
                 echo "id_roll:  $id_roll\n";
@@ -106,13 +105,11 @@ switch ($accion) {
                 $sentenciaSQL1->bindParam(':id_snack', $id_snack);
                 $sentenciaSQL1->execute();
 
-
                 // Obtener la consulta SQL
                 $query = $sentenciaSQL1->queryString;
                 echo "Consulta SQL: $query\n"; // Imprimir consulta SQL en consola
                 echo "id_snack:  $id_snack\n";
                 echo "nombre_snack:  $nombre_snack)\n";
-
 
                 header("Location: contenido.php?id_promocion=$id_promocion");
 
@@ -391,7 +388,6 @@ if ($sentencia_snack->rowCount() > 0) {
         </tbody>
     </table>
 </div>
-
 
 <script>
     window.addEventListener('DOMContentLoaded', (event) => {

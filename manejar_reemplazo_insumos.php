@@ -53,18 +53,10 @@ function obtenerVegetalesDisponibles($conexion)
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'get_reemplazo') {
-
     $id_roll = $_POST['id_roll'];
-    $insumos_faltantes = $_POST['insumos_faltantes']; // Array de objetos
-
-    // Mensaje de depuración
-    // echo "ID Roll: $id_roll<br>";
-    // echo "Insumos faltantes: <br>";
-    // print_r($insumos_faltantes);
-    // echo "<br>";
-
+    $insumos_faltantes = $_POST['insumos_faltantes']; // Array de objeto
+    
     $output = '';
-
     foreach ($insumos_faltantes as $insumo) {
         $tipo = $insumo['tipo'];
         $nombre = $insumo['nombre'];
@@ -87,22 +79,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
         $output .= '<div>';
         $output .= '<div style="text-align: center; margin-bottom: 15px;">';  // Centra el contenido y añade margen inferior
-        $output .= '<label for="insumo_' . htmlspecialchars($nombre) . '" style="display: block; margin-bottom: 10px;">Reemplazar  ' . $tipo . '-  <strong>' . htmlspecialchars($nombre) . '</strong> con :</label>'; 
-        $output .= '<select class="form-control" id="insumo_' . htmlspecialchars($nombre) . '" name="insumo_' . htmlspecialchars($nombre) . '" style="display: inline-block;  text-align: center;">';  // Ajusta el select para que sea centrado
-
-        $output .= '<option value="" style="text-align: center;"> Seleccione insumo </option>';
-
+        $output .= '<span style="display: block; font-weight: bold;">Reemplazar</span>';  // Añade "Reemplazar" antes del label
+        $output .= '<label for="insumo_' . htmlspecialchars($nombre) . '" style="display: block; margin-bottom: 10px;">' . $tipo . '-  <strong>' . htmlspecialchars($nombre) . '</strong> con </label>'; 
+        $output .= '<select class="form-control" id="insumo_' . htmlspecialchars($nombre) . '" name="insumo_' . htmlspecialchars($nombre) . '" style="display: inline-block; text-align: center;">';  // Ajusta el select para que sea centrado
+        $output .= '<option value="" style="text-align: center;"> Seleccione insumo </option>';      
         foreach ($insumos_disponibles as $id => $nombre_insumo) {
             $output .= '<option value="' . htmlspecialchars($id) . '" style="text-align: center;">' . htmlspecialchars($nombre_insumo) . '</option>';
         }
         $output .= '</select>';
         $output .= '</div>';
-        
         $output .= '</div>';
+        
     }
-
     echo $output;
-}
+}    
 ?>
 
 <script>
