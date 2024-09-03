@@ -15,12 +15,6 @@ $sentenciaSQL1->bindParam(':id_promocion', $id_promocion, PDO::PARAM_INT);
 $sentenciaSQL1->execute();
 $listaroll = $sentenciaSQL1->fetchAll(PDO::FETCH_ASSOC);
 
-// Obtener los detalles de los snacks
-$sentencia_snack = $conexion->prepare("SELECT DISTINCT snack.id_snack, snack.nombre_snack, snack.cantidad 
-    FROM snack WHERE snack.id_promocion = :id_promocion");
-$sentencia_snack->bindParam(':id_promocion', $id_promocion, PDO::PARAM_INT);
-$sentencia_snack->execute();
-$listasnack = $sentencia_snack->fetchAll(PDO::FETCH_ASSOC);
 
 // Obtener el stock de los ingredientes de cada roll
 $stock_roll = $conexion->prepare("SELECT DISTINCT 
@@ -52,28 +46,13 @@ $stock_roll->execute();
 $lista_stock_roll = $stock_roll->fetchAll(PDO::FETCH_ASSOC);
 
 
-$stock_snack = $conexion->prepare("SELECT DISTINCT
-snack.id_snack,
-snack.nombre_snack,
-snack.cantidad,
-snack.id_promocion,
-stock.id_insumo,
-stock.porcion,
-stock.fecha_modificacion
-FROM snack
-INNER JOIN stock on snack.id_snack = stock.id_insumo
-WHERE snack.id_promocion=:id_promocion");
-$stock_snack->bindParam(':id_promocion', $id_promocion, PDO::PARAM_INT);
-$stock_snack->execute();
-$lista_stock_snack = $stock_snack->fetchAll(PDO::FETCH_ASSOC);
-
 // Array para tipos de insumo
 $tipos_insumo = [
     1 => 'Cobertura',
     2 => 'Proteina',
     3 => 'Vegetal'
 ];
-
+ 
 $output = '';
 // Generar HTML para rolls
 if (!empty($listaroll)) {
@@ -119,43 +98,62 @@ if (!empty($listaroll)) {
             $output .= '<div> <strong> Insumo faltante: </strong>' . implode(', ', $ingredientes_faltantes) . ' </div>';
             $output .= '</div>';
         }
+        if (!$disponible) {
+            $output .= ' <br> <div id="mensajeAlerta" class="alert alert-dismissible alert-danger"> <strong>!Atención! </strong>No están todos los insumos disponibles. </div>';
+        }
         $output .= '</li>';
     }
     $output .= '</ul>';
 }
 
-$output = '';
+// SNACKS
+$sentencia_snack = $conexion->prepare("SELECT snack.id_snack, snack.nombre_snack, snack.cantidad 
+    FROM snack WHERE snack.id_promocion = :id_promocion");
+$sentencia_snack->bindParam(':id_promocion', $id_promocion, PDO::PARAM_INT);
+$sentencia_snack->execute();
+$listasnack = $sentencia_snack->fetchAll(PDO::FETCH_ASSOC);
+
+$stock_snack = $conexion->prepare("SELECT 
+snack.id_snack,
+snack.nombre_snack,
+snack.cantidad,
+snack.id_promocion,
+stock.id_insumo,
+stock.porcion,
+stock.fecha_modificacion
+FROM snack
+LEFT JOIN stock on snack.id_snack = stock.id_insumo
+WHERE snack.id_promocion=:id_promocion");
+$stock_snack->bindParam(':id_promocion', $id_promocion, PDO::PARAM_INT);
+$stock_snack->execute();
+$lista_stock_snack = $stock_snack->fetchAll(PDO::FETCH_ASSOC);
+
 // Generar HTML para snacks
 if (!empty($listasnack)) {
     $output .= '<ul>';
+
     foreach ($listasnack as $snack) {
-        $disponible_snack = true; // Reiniciar disponibilidad para cada snack     
+        $disponible_snack = true; 
         $snack_faltantes = [];
 
         foreach ($lista_stock_snack as $stock) {
             if ($stock['id_snack'] == $snack['id_snack']) {
-                if ($stock['porcion'] <= 0) {
+                // Compara la cantidad de la promoción con el stock disponible
+                if ($stock['porcion'] < $snack['cantidad']) {
                     $disponible_snack = false;
                     $snack_faltantes[] = $stock['nombre_snack'];
                 }
             }
         }
+        // Generar HTML según si el snack está disponible o no
         $output .= '<li style="margin-bottom: 20px;">';
         $output .= '<div style="display: flex; justify-content: space-between; align-items: center;">';
         $output .= '<div>';
         $output .= '<strong>Snack:</strong> ' . strtolower($snack['nombre_snack']) . ' - ' . $snack['cantidad'] . ' unid.<br>';
         $output .= '</div>';
-        if (!$disponible_snack) {
-            $output .= '<button class="btn btn-danger btn-sm editarSnackBtn" data-id="' . $snack['id_snack'] . '" data-snack="' . implode(',', $snack_faltantes) . '" title="Modificar insumo faltante">!</button>';
-        }
-        $output .= '</div>';
-        if (!empty($snack_faltantes)) {
-            $output .= '<div class="list-group-item list-group-item-warning d-flex justify-content-between align-items-center" style="margin-top: 10px;">';
-            $output .= '<div> <strong> Insumo faltante: </strong>' . implode(', ', $snack_faltantes) . ' </div>';
-            $output .= '</div>';
-        }
         $output .= '</li>';
     }
+
     $output .= '</ul>';
 }
 echo $output;
@@ -166,16 +164,14 @@ echo $output;
         $('.editarRollBtn').on('click', function () {
             var idRoll = $(this).data('id');
             var insumosFaltantes = $(this).data('insumos');
-
-            // Transformar insumosFaltantes en un array de objetos con 'tipo' y 'nombre'
             var insumosArray = [];
+
             if (typeof insumosFaltantes === 'string') {
                 insumosFaltantes.split(',').forEach(function (insumo) {
                     var partes = insumo.split(' - ');
                     insumosArray.push({ tipo: partes[0], nombre: partes[1] });
                 });
             }
-
             $.ajax({
                 url: 'manejar_reemplazo_insumos.php',
                 method: 'POST',
@@ -188,33 +184,8 @@ echo $output;
             });
         });
 
-        $('.editarSnackBtn').on('click', function () {
-            var idSnack = $(this).data('id');
-            var snack_faltantes = $(this).data('snack');
-
-            // Transformar insumosFaltantes en un array de objetos con 'tipo' y 'nombre'
-            //  var insumosArray = [];
-            //  if (typeof insumosFaltantes === 'string') {
-            //      insumosFaltantes.split(',').forEach(function(insumo) {
-            //          var partes = insumo.split(' - ');
-            //          insumosArray.push({ tipo: partes[0], nombre: partes[1] });
-            //      });
-            //  }
-
-            $.ajax({
-                url: 'manejar_reemplazo_snack.php',
-                method: 'POST',
-                data: { action: 'get_reemplazo', idSnack: idSnack, snack_faltantes: snack_faltantes },
-                success: function (response) {
-                    $('#reemplazoContainer').html(response);
-                    $('#modalReemplazarInsumo').modal('show');
-                }
-            });
-        });
-
         $('#modalReemplazarInsumo').on('hidden.bs.modal', function () {
             $('#modalForm .modal-content').removeClass('modal-darken'); // Quitar oscurecimiento cuando se cierre el segundo modal
         });
     });
-
 </script>

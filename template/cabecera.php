@@ -20,7 +20,6 @@
         }
 
         .input-group .porciones {
-
             width: 56px;
             height: 30px;
             font-size: 14px;
@@ -44,7 +43,6 @@
             background-color: rgba(255, 255, 255, 0);
             border-radius: 8px;
             width: 1800px;
-            padding: 20px;
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
 
@@ -77,7 +75,7 @@
             <a class="nav-item nav-link" href="clientes.php">CLIENTES</a>
         </div>
         <div class="navbar-nav ms-auto">
-            <a class="nav-item nav-link pe-4" href="<?php echo $url; ?>index.php">
+            <a class="nav-item nav-link pe-4" href="<?php echo $url; ?>/index.php">
                 <i class="fas fa-sign-out-alt"></i> CERRAR
             </a>
         </div>

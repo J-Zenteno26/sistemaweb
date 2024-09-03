@@ -5,10 +5,8 @@ include ("../template/cabecera.php"); ?>
 <?php
 include ("../config/bd.php");
 
-// IDS
 // Obtener la ID de promoción de la URL
 $id_promocion = $_GET['id_promocion'];
-
 $id_roll = isset($_POST['id_roll']) ? $_POST['id_roll'] : "";
 $id_snack = isset($_POST['id_snack']) ? $_POST['id_snack'] : "";
 
@@ -47,28 +45,42 @@ switch ($accion) {
             }
         } else if ($tipo == 'snack') {
             try {
-                //INSERTA EN TABLA SNACKS
+                // INSERTA EN TABLA SNACKS
                 $sentenciaSQL_otro = $conexion->prepare("INSERT INTO snack (id_snack, nombre_snack, cantidad, id_promocion) 
                 VALUES (NULL, :nombre_snack, :cantidad, :id_promocion)");
                 $sentenciaSQL_otro->bindParam(':nombre_snack', $nombre_snack);
                 $sentenciaSQL_otro->bindParam(':cantidad', $cantidad);
                 $sentenciaSQL_otro->bindParam(':id_promocion', $id_promocion);
                 $sentenciaSQL_otro->execute();
-
-                // LUEGO DE AÑADIR EL SNACK COMO TAL A LA TABLA DE SNACK, SE DEBE AÑADIR A LA TABLA DE INSUMOS PARA PODER CONTROLAR EL STOCK.
-                try {
-                    $sentenciaSQL2 = $conexion->prepare("INSERT INTO insumo (id_insumo, tipo_insumo, nombre_insumo) VALUES (NULL, :tipo_insumo, :nombre_insumo)");
+            
+                try { 
+                    // AÑADIENDO SNACK COMO INSUMO
+                    $sentenciaSQL2 = $conexion->prepare("INSERT INTO insumo (id_insumo, tipo_insumo, nombre_insumo) 
+                    VALUES (NULL, :tipo_insumo, :nombre_insumo)");
                     $tipo_insumo = 4; // tipo de insumo es siempre 4
                     $sentenciaSQL2->bindParam(':tipo_insumo', $tipo_insumo);
                     $sentenciaSQL2->bindParam(':nombre_insumo', $nombre_snack);
                     $sentenciaSQL2->execute();
-
+            
+                    // Obtener la última ID insertada en la tabla insumo
+                    $id_insumo = $conexion->lastInsertId();
+            
+                    // AÑADIENDO SNACK COMO STOCK
+                    $sentenciaSQL3 = $conexion->prepare("INSERT INTO stock (id_stock, id_insumo, porcion, fecha_modificacion) 
+                    VALUES (NULL, :id_insumo, :porcion, CURRENT_TIMESTAMP())");
+                    $porcion = 0; // Inicializa en 0
+            
+                    $sentenciaSQL3->bindParam(':id_insumo', $id_insumo);
+                    $sentenciaSQL3->bindParam(':porcion', $porcion);
+                    $sentenciaSQL3->execute();
+            
                 } catch (PDOException $e) {
                     echo "Error al insertar snack: " . $e->getMessage();
                 }
             } catch (PDOException $e) {
-                echo "Error al insertar snack: " . $e->getMessage();
+                echo "Error al insertar snack en tabla snacks: " . $e->getMessage();
             }
+            
         } else {
             echo "No se realizó la inserción. ";
         }
@@ -86,10 +98,6 @@ switch ($accion) {
                 $sentenciaSQL->bindParam(':vegetal_2', $vegetal2);
                 $sentenciaSQL->bindParam(':id_roll', $id_roll);
                 $sentenciaSQL->execute();
-
-                $query = $sentenciaSQL->queryString;
-                echo "Consulta SQL: $query\n"; // Imprimir consulta SQL en consola
-                echo "id_roll:  $id_roll\n";
 
                 // Redireccionar después de la modificación exitosa
                 header("Location: contenido.php?id_promocion=$id_promocion");
@@ -217,7 +225,6 @@ FROM roll WHERE roll.id_promocion = :id_promocion");
 $sentenciaSQL1->bindParam(':id_promocion', $id_promocion, PDO::PARAM_INT);
 $sentenciaSQL1->execute();
 $listaroll = $sentenciaSQL1->fetchAll(PDO::FETCH_ASSOC);
-
 // FIN CONTENIDO ROLL
 
 // OBTENIENDO CONTENIDO SNACK
@@ -229,6 +236,7 @@ if ($sentencia_snack->rowCount() > 0) {
     $listasnack = $sentencia_snack->fetchAll(PDO::FETCH_ASSOC);
 }
 // FIN CONTENIDO SNACK
+
 
 ?>
 <div class="col-md-4">
@@ -388,6 +396,7 @@ if ($sentencia_snack->rowCount() > 0) {
         </tbody>
     </table>
 </div>
+
 
 <script>
     window.addEventListener('DOMContentLoaded', (event) => {

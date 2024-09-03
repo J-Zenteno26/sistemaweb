@@ -1,108 +1,66 @@
-<?php include("template/cabecera.php"); ?>
+<div class="modal fade" id="modalBoleta" tabindex="-1" role="dialog">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header" style="background-color: #bfe3bf;">
+                <h5 class="modal-title text-center" style="flex: 1;">ORDEN EMITIDA CORRECTAMENTE</h5>
+            </div>
+            <div class="modal-body">
+                <p>ORDEN DE COMPRA NUMERO : <?php echo $id_orden; ?></p>
 
+                <div class="card-body">
+                    <?php
+                    $promocionesArray = explode(', ', $promociones);
+                    $total = 0;
+                    foreach ($promocionesArray as $id_promocion) {
+                        $sentenciaSQL_promocion = $conexion->prepare("SELECT * FROM promocion WHERE id_promocion = :id_promocion");
+                        $sentenciaSQL_promocion->bindParam(':id_promocion', $id_promocion, PDO::PARAM_INT);
+                        $sentenciaSQL_promocion->execute();
+                        $promocion = $sentenciaSQL_promocion->fetch(PDO::FETCH_ASSOC);
 
+                        if ($promocion) {
+                            $total += $promocion['precio'];
+                            echo '<div class="d-flex justify-content-between">';
+                            echo '<li><span>' . strtoupper($promocion['nombre_promocion']) . '</span></li>';
+                            echo '<span>$' . $promocion['precio'] . '</span>';
+                            if (!empty($comentarios)) {
+                                echo '<span>' . htmlspecialchars($comentarios) . '</span>';
+                            }
+                            echo '</div>';
+                        }
+                    }
+                    ?>
+                    <hr>
 
-<?php
+                    <li><span><strong>TOTAL</strong></span></li>
+                    <span><strong>$<?php echo $total; ?></strong></span>
+                    <br>
+                    <hr>
+                    <!-- Sección Cliente -->
+                    <h5 class="text-center" style="flex: 1;">Información del Cliente</h5>
+                    <br>
+                    <div class="d-flex justify-content-between">
+                        <li><span>Teléfono:</span></li>
+                        <span><?php echo !empty($telefono) ? htmlspecialchars($telefono) : 'Sin datos'; ?></span>
+                    
+                
+                        <li><span>Nombre:</span></li>
+                        <span><?php echo !empty($nombre_cliente) ? htmlspecialchars($nombre_cliente) : 'Sin datos'; ?></span>
+                 
+                        <li><span>Dirección:</span></li>
+                        <?php echo !empty($direccion_cliente) ? htmlspecialchars($direccion_cliente) : 'Sin datos'; ?></span>
+                  
+                        <li><span>Referencia:</span></li>
+                        <span><?php echo !empty($referencia_cliente) ? htmlspecialchars($referencia_cliente) : 'Sin datos'; ?></span>
+                    
+                        <li><span>Medio de Pago:</span></li>
+                        <span><?php echo $metodo_pago_texto; ?></span>
+                    </div>
+                </div>
 
-//PRE 
-
-$accion = isset($_POST['accion']) ? $_POST['accion'] : "";
-$seleccion = isset($_POST['seleccion']) ? $_POST['seleccion'] : "";
-$editar = isset($_POST['editar']) ? $_POST['editar'] : "";
-
-include("administrador/config/bd.php");
-
-// Obtener todas las promociones
-$sentenciaSQL = $conexion->prepare("SELECT * FROM promocion");
-$sentenciaSQL->execute();
-$listapromocion = $sentenciaSQL->fetchAll(PDO::FETCH_ASSOC);
-
-$url = "http://" . $_SERVER['HTTP_HOST'] . "/sistemaweb";
-?>
-
-<style>
-    .card {
-        border: 1px solid #ccc;
-        border-radius: 5px;
-        overflow: hidden;
-        width: 300px;
-        margin: 9px;
-    }
-
-    .card-img-top {
-        width: 100%;
-        height: 200px;
-        object-fit: cover;
-    }
-
-    .card-body {
-        padding: 10px;
-    }
-
-    .card-title {
-        font-size: 1.25em;
-        margin-bottom: 10px;
-    }
-
-    .card-text {
-        margin-bottom: 10px;
-    }
-</style>
-
-<?php foreach ($listapromocion as $promocion) { 
-    // Obtener rolls para la promoción actual
-    $sentenciaSQL1 = $conexion->prepare("SELECT DISTINCT roll.id_roll, roll.nombre_roll,
-        (SELECT nombre_insumo FROM insumo WHERE id_insumo = roll.cobertura AND insumo.tipo_insumo = 1) AS cobertura,
-        (SELECT nombre_insumo FROM insumo WHERE id_insumo = roll.proteina AND insumo.tipo_insumo = 2) AS proteina,
-        (SELECT nombre_insumo FROM insumo WHERE id_insumo = roll.vegetal_1 AND insumo.tipo_insumo = 3) AS vegetal_1,
-        (SELECT nombre_insumo FROM insumo WHERE id_insumo = roll.vegetal_2 AND insumo.tipo_insumo = 3) AS vegetal_2
-        FROM roll WHERE roll.id_promocion = :id_promocion");
-    $sentenciaSQL1->bindParam(':id_promocion', $promocion['id_promocion'], PDO::PARAM_INT);
-    $sentenciaSQL1->execute();
-    $listaroll = $sentenciaSQL1->fetchAll(PDO::FETCH_ASSOC);
-
-    // Obtener snacks para la promoción actual
-    $sentencia_snack = $conexion->prepare("SELECT DISTINCT snack.id_snack, snack.nombre_snack, snack.cantidad 
-        FROM snack WHERE snack.id_promocion = :id_promocion");
-    $sentencia_snack->bindParam(':id_promocion', $promocion['id_promocion'], PDO::PARAM_INT);
-    $sentencia_snack->execute();
-    $listasnack = $sentencia_snack->fetchAll(PDO::FETCH_ASSOC);
-?>
-    <div class="card border-primary mb-3" style="max-width: 20rem;">
-        <div class="card-header">
-            <img class="card-img-top" src="./img/<?php echo $promocion['imagen']; ?>" alt="">
-        </div>
-        <div class="card-body">
-            <h4 class="card-title"><?php echo strtoupper($promocion['nombre_promocion']); ?></h4>
-            <p class="card-text">Precio: <?php echo $promocion['precio']; ?></p>
-            <p class="card-text">
-                Contenido:
-                <?php if (!empty($listaroll)) { ?>
-                    <ul>
-                        <?php foreach ($listaroll as $roll) { ?>
-                            <li>
-                                ROLL: <?php echo strtoupper($roll['nombre_roll']); ?> -
-                                Cobertura: <?php echo $roll['cobertura']; ?> -
-                                Proteina: <?php echo $roll['proteina']; ?> -
-                                Vegetal 1: <?php echo $roll['vegetal_1']; ?> -
-                                Vegetal 2: <?php echo $roll['vegetal_2']; ?>
-                            </li>
-                        <?php } ?>
-                    </ul>
-                <?php } ?>
-                <?php if (!empty($listasnack)) { ?>
-                    <ul>
-                        <?php foreach ($listasnack as $snack) { ?>
-                            <li>
-                                SNACK: <?php echo strtoupper($snack['nombre_snack']); ?> -
-                                Cantidad: <?php echo $snack['cantidad']; ?>
-                            </li>
-                        <?php } ?>
-                    </ul>
-                <?php } ?>
-            </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
+            </div>
         </div>
     </div>
-<?php } ?>
-
-<?php include("template/piepagina.php"); ?>
+</div>

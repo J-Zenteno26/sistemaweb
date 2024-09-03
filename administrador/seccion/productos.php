@@ -1,4 +1,4 @@
-<?php include ("../template/cabecera.php"); ?>
+<?php include("../template/cabecera.php"); ?>
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@10"></script>
 <?php
 
@@ -13,7 +13,7 @@ $seleccion = (isset($_POST['seleccion'])) ? $_POST['seleccion'] : "";
 $editar = (isset($_POST['editar'])) ? $_POST['editar'] : "";
 
 
-include ("../config/bd.php");
+include("../config/bd.php");
 
 switch ($accion) {
 
@@ -21,7 +21,7 @@ switch ($accion) {
 
         try {
             $sentenciaSQL = $conexion->prepare("INSERT INTO promocion (id_promocion, nombre_promocion, imagen, precio) 
-        VALUES (NULL, :nombre_promocion, :imagen, :precio)");
+            VALUES (NULL, :nombre_promocion, :imagen, :precio)");
 
             /////SECCION IMAGEN/////
             $fecha = new DateTime();
@@ -137,7 +137,7 @@ $listapromocion = $sentenciaSQL->fetchAll(PDO::FETCH_ASSOC);
 <div class="col-md-4">
     <div class="card">
         <div class="card-header text-white bg-primary mb-3 d-flex justify-content-center">
-            Datos del producto o promoción
+            DETALLES 
         </div>
         <div class="card-body">
             <form method="POST" enctype="multipart/form-data">
@@ -147,14 +147,14 @@ $listapromocion = $sentenciaSQL->fetchAll(PDO::FETCH_ASSOC);
                     <input type="text" required class="form-control" value="<?php echo $txtNombre; ?>" name="txtNombre"
                         id="txtNombre" placeholder="Nombre">
                 </div>
-
+                <br>
                 <!-- PRECIO -->
                 <div class="form-group">
                     <label for="txtPrecio">Precio</label>
                     <input type="int" required class="form-control" value="<?php echo $txtPrecio; ?>" name="txtPrecio"
                         id="txtPrecio" placeholder="Precio">
                 </div>
-
+<br>
                 <!-- IMAGEN -->
                 <div class="form-group">
                     <label for="txtImagen">Imagen</label>
@@ -178,42 +178,45 @@ $listapromocion = $sentenciaSQL->fetchAll(PDO::FETCH_ASSOC);
 </div>
 
 <div class="col-md-8">
-    <table class="table table-bordered">
-        <thead style="text-align: center;">
-            <tr class="table-primary">
-                <th style="font-size: 18px;">Nombre</th>
-                <th style="font-size: 18px;">Precio</th>
-                <th style="font-size: 18px;">Imagen</th>
-                <th style="font-size: 18px;">Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($listapromocion as $promocion) { ?>
-                <tr>
-                    <td><?php echo strtoupper($promocion['nombre_promocion']) ?></td>
-                    <td><?php echo strtoupper($promocion['precio']) ?></td>
-                    <td>
-                        <div class="btn-group d-flex justify-content-center" role="group" aria-label="">
-                            <img class="img-tumbnail rounded" src="../../img/<?php echo $promocion['imagen'] ?>" width="70"
-                                alt="">
-                        </div>
-                    </td>
-                    <td>
-                        <div class="btn-group d-flex justify-content-center" role="group" aria-label="">
-                            <form method="post">
-                                <input type="hidden" name="txtID" id="txtID"
-                                    value="<?php echo $promocion['id_promocion'] ?>">
-                                <input type="submit" name="accion" value="Seleccionar" class="btn btn-primary">
-                                <a href="contenido.php?id_promocion=<?php echo $promocion['id_promocion']; ?>"
-                                    class="btn btn-primary">Detalles</a>
-                                <input type="submit" name="accion" value="Borrar" class="btn btn-danger">
-                            </form>
-                        </div>
-                    </td>
+    <div class="card">
+        <table class="table table-bordered">
+            <thead style="text-align: center;">
+                <tr class="table-primary">
+                    <th style="font-size: 18px;">NOMBRE</th>
+                    <th style="font-size: 18px;">PRECIO</th>
+                    <th style="font-size: 18px;">IMAGEN</th>
+                    <th style="font-size: 18px;">ACCIONES</th>
                 </tr>
-            <?php } ?>
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                <?php foreach ($listapromocion as $promocion) { ?>
+                    <tr>
+                        <td><li> <?php echo strtoupper($promocion['nombre_promocion']) ?> </li></td>
+                       
+                        <td>$<?php echo strtoupper($promocion['precio']) ?></td>
+                        <td>
+                            <div class="btn-group d-flex justify-content-center" role="group" aria-label="">
+                                <img class="img-tumbnail rounded" src="../../img/<?php echo $promocion['imagen'] ?>"
+                                    width="70" alt="">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="btn-group d-flex justify-content-center" role="group" aria-label="">
+                                <form method="post">
+                                    <input type="hidden" name="txtID" id="txtID"
+                                        value="<?php echo $promocion['id_promocion'] ?>">
+                                    <input type="submit" name="accion" value="Seleccionar" class="btn btn-primary">
+                                    <a href="contenido.php?id_promocion=<?php echo $promocion['id_promocion']; ?>"
+                                        class="btn btn-primary">Detalles</a>
+                                    <input type="submit" name="accion" value="Borrar" class="btn btn-danger">
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                <?php } ?>
+            </tbody>
+        </table>
+    </div>
 </div>
 
-<?php include ("../template/piepagina.php"); ?>
+<?php include("../template/piepagina.php"); ?>

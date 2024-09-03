@@ -1,24 +1,16 @@
 <?php
 session_start();
-include ("template/cabecera.php");
+include("template/cabecera.php");
 
-include ("administrador/config/bd.php"); //BD
+include("administrador/config/bd.php"); //BD
 
-// Inicializar o crear carrito
 if (!isset($_SESSION['carrito'])) {
-    $_SESSION['carrito'] = array();
+    $_SESSION['carrito'] = []; // Inicializa el carrito como un arreglo vacío
 }
-
-// Limpiar el carrito al cargar la página por primera vez
-if (!isset($_SESSION['pagina_cargada'])) {
-    $_SESSION['carrito'] = array();
-    $_SESSION['pagina_cargada'] = true;
-}
-
-// Procesar la acción del formulario - VARIABLES UTILIZADAS
-$stock_disponible = isset($_POST['stock_disponible']) ? $_POST['stock_disponible'] : "";
 $id_promocion = isset($_POST['id_promocion']) ? $_POST['id_promocion'] : '';
+$total = isset($_POST['total']) ? $_POST['total'] : '';
 $comentarios = isset($_POST['comentarios']) ? $_POST['comentarios'] : '';
+
 
 // Obtener todas las promociones
 $sentenciaSQL = $conexion->prepare("SELECT * FROM promocion");
@@ -45,7 +37,6 @@ switch ($accion) {
                 }
             }
         }
-        //continuar con la orden de compra
         break;
 
     case "Deshacer";
@@ -63,7 +54,7 @@ switch ($accion) {
     .card-container {
         perspective: 1000px;
         width: calc(25% - 60px);
-        margin: 20px;
+        margin: 5px;
         box-sizing: border-box;
     }
 
@@ -83,7 +74,7 @@ switch ($accion) {
         border: 1px solid #007bff;
         border-radius: 1rem;
         box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
-        min-height: 500px;
+        min-height: 400px;
     }
 
     .card-container:hover .card {
@@ -171,26 +162,32 @@ switch ($accion) {
     .modal-darken {
         background-color: rgba(0, 0, 0, 0.5);
         pointer-events: none;
-        color: transparent;
-        /* Hacer el texto invisible */
     }
 
     .modal-darken * {
         pointer-events: none;
-        /* Desactivar interactividad de todos los elementos hijos */
     }
 
     .modal-darken textarea,
     .modal-darken button {
         background-color: rgba(0, 0, 0, 0.5) !important;
         color: transparent !important;
-        /* Hacer el texto invisible */
         border: none;
-        /* Remover el borde si es necesario */
+    }
+
+    .btn-form1 {
+        text-align: center;
+    }
+
+    .radio-group1 {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 10px;
     }
 </style>
 
-<div class="col-md-9">
+<div class="col-md-8">
     <div class="cards-container">
         <?php foreach ($listapromocion as $promocion) { ?>
             <div class="card-container">
@@ -201,9 +198,10 @@ switch ($accion) {
                                 style="border-radius: 50%; border: 2px solid #007bff;">
                         </div>
                         <br>
-                        <br>
                         <div class="card-body">
-                            <h3 class="card-title"><?php echo strtoupper($promocion['nombre_promocion']); ?></h3>
+                            <h5 class="card-title" style="text-align: center;">
+                                <?php echo strtoupper($promocion['nombre_promocion']); ?>
+                            </h5>
                             <p class="card-text">VALOR $<?php echo $promocion['precio']; ?></p>
                         </div>
                     </div>
@@ -250,7 +248,6 @@ switch ($accion) {
                                     <?php } ?>
                                 </ul>
                             <?php } ?>
-                            </p>
                             <div class="btn-group d-flex justify-content-center" role="group" aria-label="">
                                 <button type="button" class="btn btn-warning openModalBtn" title="Ver detalle"
                                     data-toggle="modal" data-target="#modalForm"
@@ -266,12 +263,13 @@ switch ($accion) {
     </div>
 </div>
 
-<div class="col-md-3">
-    <div class="card border-dark mb-1"
-        style="min-height: 5rem; max-height: 20rem; max-width: 20rem; height: auto; overflow-y: auto;">
+<div class="col-md-4">
+    <div id="carrito" class="card border-dark mb-1"
+        style="min-height: 5rem; max-height: 20rem; max-width: 28rem; height: auto; overflow-y: auto;">
         <div class="card-header d-flex justify-content-center">
             <h4>Orden en proceso</h4>
         </div>
+
         <div class="card-body">
             <?php if (!empty($_SESSION['carrito'])) { ?>
                 <?php
@@ -279,28 +277,39 @@ switch ($accion) {
                 foreach ($_SESSION['carrito'] as $item) {
                     $total += $item['precio'];
                     ?>
-                    <div class="d-flex justify-content-between">
-                        <span><?php echo strtoupper($item['nombre_promocion']); ?></span>
-                        <span>$<?php echo $item['precio']; ?></span>
+                    <div class="d-flex flex-column">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <li><span><?php echo strtoupper($item['nombre_promocion']); ?></span></li>
+                            <span>$<?php echo $item['precio']; ?></span>
+                        </div>
+                        <div class="text-end mt-2">
+                            <span><em>*<?php echo htmlspecialchars($comentarios); ?></em>.</span>
+                        </div>
                     </div>
                 <?php } ?>
+                <hr>
                 <div class="d-flex justify-content-between">
-                    <span><strong>TOTAL</strong></span>
+                    <li><span><strong>TOTAL</strong></span></li>
+                    <input type="hidden" id="total" value="<?php echo $total; ?>">
                     <span><strong>$<?php echo $total; ?></strong></span>
                 </div>
             <?php } else { ?>
-                <i> Agregue una promoción para comenzar una orden. </i>
+                <div class="d-flex justify-content-center">
+                    <i>Agregue una promoción para comenzar una orden.</i>
+                </div>
             <?php } ?>
         </div>
+
         <div class="card-footer">
             <?php if (!empty($_SESSION['carrito'])) { ?>
-                <form action="#" method="POST" enctype="multipart/form-data">
-                    <div class="btn-group d-flex justify-content-center" role="group" aria-label="">
-                        <button type="submit" name="accion" value="Continuar" class="btn btn-primary">Continuar</button>
-                        <button type="submit" name="accion" value="Deshacer" class="btn btn-warning">Deshacer</button>
-                        <button type="submit" name="accion" value="Vaciar" class="btn btn-info">Vaciar</button>
-                    </div>
-                </form>
+                <div class="d-flex justify-content-center" role="group" aria-label="">
+                    <button type="button" class="btn btn-success rounded me-2" id="continuarCompra">Continuar</button>
+                    <form method="POST" action="#" class="d-flex">
+                        <button type="submit" name="accion" value="Deshacer"
+                            class="btn btn-warning rounded me-2">Deshacer</button>
+                        <button type="submit" name="accion" value="Vaciar" class="btn btn-danger rounded">Vaciar</button>
+                    </form>
+                </div>
             <?php } ?>
         </div>
     </div>
@@ -317,32 +326,31 @@ switch ($accion) {
                     <div id="modalRollsSnacks">
                         <!-- Detalles de rolls y snacks irán aquí -->
                     </div>
-                    <div id="mensajeAlerta" class="alert alert-dismissible alert-danger">
-                        <strong>!Atención! </strong>No están todos los insumos disponibles.
-                    </div>
-                    <div>
-                        <label for="comentarios" class="form-label mt-2">Comentarios</label>
-                        <textarea class="form-control" id="comentarios" rows="3"></textarea>
-                    </div>
-                    <p id="modalPrecio" class="text-right"></p>
-                </div>
-
-                <form action="#" method="POST" enctype="multipart/form-data">
-                    <div class="modal-footer">
-                        <button type="submit" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
+                    <form method="POST" action="#">
+                        <div>
+                            <label class="form-label mt-2">Comentarios</label>
+                            <textarea class="form-control" name="comentarios" id="comentarios"
+                                rows="2"><?php echo htmlspecialchars($comentarios); ?></textarea>
+                        </div>
                         <input type="hidden" name="id_promocion" value="<?php echo $id_promocion; ?>">
-                        <button type="submit" class="btn btn-warning" name="accion" value="addCarrito" <?php echo $stock_disponible ? '' : 'disabled'; ?>>Añadir</button>
-                    </div>
-                </form>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-danger" data-dismiss="modal">Cerrar</button>
+                            <button type="submit" class="btn btn-warning" name="accion"
+                                value="addCarrito">Añadir</button>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 
+    <!-- Modal reemplazos -->
     <div class="modal fade" id="modalReemplazarInsumo" tabindex="-1" role="dialog">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title text-center" style="flex: 1;" id="modalReemplazarInsumoLabel">Reemplazo de Insumos
+                    <h5 class="modal-title text-center" style="flex: 1;" id="modalReemplazarInsumoLabel">Reemplazo de
+                        Insumos
                     </h5>
                 </div>
                 <div class="modal-body" id="reemplazoContainer">
@@ -355,66 +363,246 @@ switch ($accion) {
             </div>
         </div>
     </div>
-    <script>
-        $(document).ready(function () {
-            $('#modalForm').on('show.bs.modal', function (e) {
-                var button = $(e.relatedTarget);
-                var id_promocion = button.data('id');
-                $(this).find('input[name="id_promocion"]').val(id_promocion);
-            });
 
-            $('.openModalBtn').click(function () {
-                var button = $(this);
-                var id_promocion = button.data('id');
-                var nombre_promocion = button.data('nombre');
-                var precio = button.data('precio');
+    <!-- Modal clientes -->
+    <div class="modal fade" id="modalCliente" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title text-center" style="flex: 1; ">INFORMACIÓN DEL CLIENTE</h5>
+                </div>
+                <div class="modal-body" id="clienteContainer">
+                    <div class="form-group " style="text-align: center;">
+                        <label for="telefono_cliente"><strong> Teléfono (Identificador)</strong></label>
+                        <input type="text" id="telefono_cliente" class="form-control"
+                            style="text-align: center; width: 90%; margin: 0 auto;"
+                            placeholder="Ingrese teléfono para realizar búsqueda en sistema">
+                        <div id="resultadoBusqueda"></div> <!-- Aquí aparecerán los resultados de la búsqueda -->
+                    </div>
+                    <div class="alert alert-warning" id="alertaCliente" style="display: none;"></div>
+                    <br>
+                    <form id="formCliente">
+                        <div style="width: 90%; margin: 0 auto;">
+                            <input type="hidden" id="id_cliente" name="id_cliente">
+                            <label for="nombre_cliente"><strong>Nombre</strong></label>
+                            <input type="text" id="nombre_cliente" name="nombre_cliente" class="form-control">
 
-                $('#modalNombrePromocion').text(nombre_promocion).data('id', id_promocion); // Guarda el ID en el elemento
-                $('#modalPrecio').text('Precio $' + precio);
+                            <label for="direccion_cliente"><strong>Dirección</strong></label>
+                            <input type="text" id="direccion_cliente" name="direccion_cliente" class="form-control">
 
-                $.ajax({
-                    url: 'obtener_detalles_promocion.php',
-                    type: 'POST',
-                    data: { id_promocion: id_promocion },
-                    success: function (data) {
-                        $('#modalRollsSnacks').html(data);
-                        $('#modalForm').modal('show');
-                    }
-                });
-            });
+                            <label for="referencia_cliente"><strong>Referencia</strong></label>
+                            <input type="text" id="referencia_cliente" name="referencia_cliente" class="form-control"
+                                placeholder="Ingrese referencia del domicilio [Opcional]">
+                        </div>
+                        <br>
+                        <div class="btn-form1" role="group" aria-label="Basic radio toggle button group">
+                            <label><strong>OPCIÓN DE ENTREGA</strong></label>
+                            <br>
+                            <div class="radio-group1">
+                                <input type="radio" class="btn-check" id="retiro" name="metodo_entrega" value="0">
+                                <label class="btn btn-outline-primary" for="retiro">Retiro</label>
 
-            $('#guardarReemplazos').click(function () {
-                var listaReemplazos = [];
+                                <input type="radio" class="btn-check" id="despacho" name="metodo_entrega" value="1">
+                                <label class="btn btn-outline-primary" for="despacho">Despacho</label>
+                            </div>
+                        </div>
+                        <br>
+                        <div class="btn-form" style="text-align: center; " role="group"
+                            aria-label="Basic checkbox toggle button group">
+                            <label><strong>SELECCIONE MEDIO DE PAGO</strong></label>
+                            <br> <br>
+                            <input type="checkbox" class="btn-check" id="pago_efectivo" name="metodo_pago" value="0"
+                                checked="">
+                            <label class="btn btn-outline-primary" for="pago_efectivo">Efectivo</label>
 
-                $('#reemplazoContainer select').each(function () {
-                    var tipo = $(this).closest('div').find('label').text().split('-')[0].trim(); // Extraer el tipo
-                    var insumoReemplazado = $(this).attr('name').replace('insumo_', ''); // Obtener el nombre del insumo reemplazado
-                    var insumoNuevoID = $(this).val(); // Obtener el ID del insumo nuevo
-                    var insumoNuevoNombre = $(this).find('option:selected').text(); // Obtener el nombre del insumo nuevo
+                            <input type="checkbox" class="btn-check" id="pago_transferencia" name="metodo_pago"
+                                value="1">
+                            <label class="btn btn-outline-primary" for="pago_transferencia">Transferencia</label>
 
-                    if (insumoNuevoID) { // Si hay un insumo seleccionado
-                        listaReemplazos.push({
-                            tipo: tipo,
-                            insumoReemplazado: insumoReemplazado,
-                            insumoNuevoNombre: insumoNuevoNombre
-                        });
+                            <input type="checkbox" class="btn-check" id="pago_debito" name="metodo_pago" value="2">
+                            <label class="btn btn-outline-primary" for="pago_debito">Débito / Prepago</label>
 
-                        // Si se selecciona un insumo se desbloquea el botón "addCarrito" y se oculta el mensaje de alerta
-                        $('button[name="accion"][value="addCarrito"]').prop('disabled', false); // Obteniendo button por su value
-                        mensajeAlerta.style.display = "none";
-                    }
-                });
+                            <input type="checkbox" class="btn-check" id="pago_credito" name="metodo_pago" value="3">
+                            <label class="btn btn-outline-primary" for="pago_credito">Crédito</label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer" style="justify-content: center;">
+                    <button type="button" class="btn btn-lg btn-success w-100" id="Finalizar">Finalizar
+                        compra</button>
+                    <button type="button" class="btn btn-lg btn-danger w-100" id="limpiarCampos">Limpiar
+                        campos</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
-                var mensajes = listaReemplazos.map(function (item) {
-                    return `${item.tipo} ${item.insumoReemplazado} fue reemplazado por ${item.insumoNuevoNombre}`;
-                });
+</div>
 
-                $('#comentarios').val(mensajes.join('\n')); // Enviar los mensajes a la textarea 
+<script>
+    $(document).ready(function () {
+        $('.openModalReemplazoBtn').click(function () {
+            $('#modalReemplazarInsumo').modal('show');
+            $('.modal-backdrop').addClass('modal-darken'); // Agregar clase al fondo
+        });
 
-                $('#modalReemplazarInsumo').modal('hide'); // Cerrar modal
+        $('#modalReemplazarInsumo').on('hidden.bs.modal', function () {
+            $('.modal-backdrop').removeClass('modal-darken'); // Eliminar clase cuando se cierra el modal
+        });
+
+        $('#modalForm').on('show.bs.modal', function (e) {
+            var button = $(e.relatedTarget);
+            var id_promocion = button.data('id');
+            $(this).find('input[name="id_promocion"]').val(id_promocion);
+        });
+
+        $('.openModalBtn').click(function () {
+            var button = $(this);
+            var id_promocion = button.data('id');
+            var nombre_promocion = button.data('nombre');
+            var precio = button.data('precio');
+
+            $('#modalNombrePromocion').text(nombre_promocion).data('id', id_promocion); // Guarda el ID en el elemento
+            $('#modalPrecio').text('Precio $' + precio);
+
+            $.ajax({
+                url: 'obtener_detalles_promocion.php',
+                type: 'POST',
+                data: { id_promocion: id_promocion },
+                success: function (data) {
+                    $('#modalRollsSnacks').html(data);
+                    $('#modalForm').modal('show');
+                }
             });
         });
-    </script>
+
+        $('#guardarReemplazos').click(function () {
+            var listaReemplazos = [];
+
+            $('#reemplazoContainer select').each(function () {
+                var tipo = $(this).closest('div').find('label').text().split('-')[0].trim(); // Extraer el tipo
+                var insumoReemplazado = $(this).attr('name').replace('insumo_', ''); // Obtener el nombre del insumo reemplazado
+                var insumoNuevoID = $(this).val(); // Obtener el ID del insumo nuevo
+                var insumoNuevoNombre = $(this).find('option:selected').text(); // Obtener el nombre del insumo nuevo
+
+                if (insumoNuevoID) { // Si hay un insumo seleccionado
+                    listaReemplazos.push({
+                        tipo: tipo,
+                        insumoReemplazado: insumoReemplazado,
+                        insumoNuevoNombre: insumoNuevoNombre
+                    });
+
+                    // Si se selecciona un insumo se desbloquea el botón "addCarrito" y se oculta el mensaje de alerta
+                    $('button[name="accion"][value="addCarrito"]').prop('disabled', false); // Obteniendo button por su value
+                }
+            });
+
+            var mensajes = listaReemplazos.map(function (item) {
+                return `${item.tipo} ${item.insumoReemplazado} fue reemplazado por ${item.insumoNuevoNombre}`;
+            });
+
+            $('#comentarios').val(mensajes.join('\n')); // Enviar los mensajes a la textarea 
+
+            $('#modalReemplazarInsumo').modal('hide'); // Cerrar modal
+        });
 
 
-    <?php include ("template/piepagina.php"); ?>
+        // Buscar el teléfono cuando se escriba en el campo
+        $('#telefono_cliente').on('input', function () {
+            var telefono = $(this).val();
+
+            if (telefono.length >= 3) { // Buscar si se han ingresado al menos 3 dígitos
+                $.ajax({
+                    url: 'buscar_cliente.php',
+                    type: 'POST',
+                    data: { telefono: telefono },
+                    success: function (data) {
+                        var cliente = JSON.parse(data);
+                        if (cliente) {
+                            $('#alertaCliente').html('Se encontró un cliente existente para el número de teléfono: ' + cliente.telefono + '. Haga click <u>aquí</u> para cargar los datos');
+                            $('#alertaCliente').show();
+
+                            // Manejar la confirmación para cargar los datos
+                            $('#alertaCliente').click(function () {
+                                $('#id_cliente').val(cliente.id_cliente);
+                                $('#nombre_cliente').val(cliente.nombre_cliente);
+                                $('#direccion_cliente').val(cliente.direccion);
+                                $('#telefono_cliente').val(cliente.telefono);
+                                $('#alertaCliente').hide(); // Ocultar la alerta después de confirmar
+                            });
+                        } else {
+                            $('#alertaCliente').hide();
+                        }
+                    }
+                });
+            } else {
+                $('#alertaCliente').hide();
+            }
+        });
+
+        // Mostrar el modal cliente
+        $('#continuarCompra').click(function () {
+            $('#modalCliente').modal('show');
+        });
+
+        $('#limpiarCampos').click(function () {
+            $('#formCliente')[0].reset();
+            $('#telefono_cliente').val('');
+            $('#alertaCliente').hide();
+        });
+
+        $("#Finalizar").click(function () {
+            // Cerrar el modal del cliente si está abierto
+            $('#modalCliente').modal('hide');
+
+            var idsPromociones = [];
+            <?php
+            if (!empty($_SESSION['carrito'])) {
+                foreach ($_SESSION['carrito'] as $item) {
+                    echo 'idsPromociones.push("' . $item['id_promocion'] . '");';
+                }
+            }
+            ?>
+
+            var datosFormulario = {
+                id_cliente: $("#id_cliente").val(),
+                nombre_cliente: $("#nombre_cliente").val(),
+                telefono_cliente: $("#telefono_cliente").val(),
+                direccion_cliente: $("#direccion_cliente").val(),
+                referencia_cliente: $("#referencia_cliente").val(),
+                metodo_pago: $("input[name='metodo_pago']:checked").val(),
+                metodo_entrega: $("input[name='metodo_entrega']:checked").val(),
+                comentarios: $("#comentarios").val(),
+                total: $("#total").val(),
+                promociones: idsPromociones.join(", "), // Convierte el array en una cadena de texto
+                action: 'process_order' // Añadir una acción para identificar la solicitud
+            };
+
+            // console.log(datosFormulario);
+
+            $.ajax({
+                type: "POST",
+                url: "procesar_orden.php",
+                data: datosFormulario,
+                dataType: "json",
+                success: function (response) {
+                    if (response.error) {
+                        alert(response.error);
+                    } else if (response.modal) {
+                        console.log(datosFormulario);
+                        // Inyectar el HTML del modal en el documento
+                        $('body').append(response.modal);
+
+                        // Mostrar el modal usando Bootstrap
+                        $('#modalBoleta').modal('show');
+                    }
+                },
+                error: function () {
+                    alert("Error al finalizar la compra.");
+                }
+            });
+        });
+    });
+</script>
+
+<?php include("template/piepagina.php"); ?>
